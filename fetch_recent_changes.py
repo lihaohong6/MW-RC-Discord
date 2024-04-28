@@ -107,7 +107,7 @@ class RecentChangesFetcher:
     def setup(self):
         global logger
         logger = logging.getLogger('discord.rc')
-        logger.setLevel(logging.DEBUG)
+        logger.setLevel(logging.INFO)
         logger.info("Logger started")
 
 

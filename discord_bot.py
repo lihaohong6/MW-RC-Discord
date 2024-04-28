@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import traceback
 from discord.ext import tasks
 from fetch_recent_changes import RecentChangesFetcher
 
@@ -31,7 +32,7 @@ class MyClient(discord.Client):
         try:
             new_rc_id, message = self.fetcher.get_recent_changes(self.rc_id)
         except Exception as e:
-            print(e)
+            logging.error(traceback.format_exc())
             return
         if message.strip() != "":
             channel = self.get_channel(channel_id)  # channel ID goes here
