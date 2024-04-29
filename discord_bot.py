@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from requests.exceptions import SSLError, ConnectTimeout
 import traceback
 from discord.ext import tasks
 from fetch_recent_changes import RecentChangesFetcher
@@ -31,6 +32,9 @@ class MyClient(discord.Client):
     async def poll_recent_changes(self):
         try:
             new_rc_id, message = self.fetcher.get_recent_changes(self.rc_id)
+        except (SSLError, ConnectTimeout) as e:
+            logging.error(f"Network error: {str(e)}. Perhaps the server is down?")
+            return
         except Exception as e:
             logging.error(traceback.format_exc())
             return
