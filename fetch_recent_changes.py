@@ -2,17 +2,16 @@ import requests
 from pathlib import Path
 import logging
 
-logger: logging.Logger
-
 class RecentChangesFetcher:
     user_groups: dict[str, list[str]] = {}
     user_rights: dict[str, list[str]] = {}
     
-    def __init__(self, name: str, api_root: str, article_root: str) -> None:
+    def __init__(self, name: str, api_root: str, article_root: str, logger: logging.Logger) -> None:
         self.name = name
         self.api_root = api_root
         self.article_root = article_root
         self.last_rc_file = Path(f"{name}-rcid.txt")
+        self.logger = logger
 
     def get_user_rights(self, usernames: list[str]) -> list[list[str]]:
         user_rights = self.user_rights
@@ -25,7 +24,7 @@ class RecentChangesFetcher:
             f"More than 50 users ({usernames}) need to be checked." \
             "This wiki has some serious problems other than non-autopatrolled users editing pages."
         if len(query_names) > 0:
-            logger.debug("User rights request sent for " + ", ".join(usernames))
+            self.logger.debug("User rights request sent for " + ", ".join(usernames))
             result = requests.get(self.api_root, {
                 'action': 'query',
                 'list': 'users',
@@ -68,7 +67,7 @@ class RecentChangesFetcher:
             try:
                 return int(f.read())
             except Exception as e:
-                logger.warn(str(e))
+                self.logger.warn(str(e))
                 return default
             
     def save_last_change(self, id: int):
@@ -104,15 +103,8 @@ class RecentChangesFetcher:
         return result
 
 
-    def setup(self):
-        global logger
-        logger = logging.getLogger('discord.rc')
-        logger.setLevel(logging.INFO)
-        logger.info("Logger started")
-
-
     def get_recent_changes(self, cutoff_id: int) -> tuple[int, str]:
-        logger.debug("Recent changes request sent")
+        self.logger.debug("Recent changes request sent")
         rc = requests.get(self.api_root, {
             # TODO: maybe add timestamp here? not really necessary since 100 edits/min or even 100 edit/hour is a lot
             'action': 'query',
@@ -128,7 +120,7 @@ class RecentChangesFetcher:
         for change in rc['query']['recentchanges']:
             rc_id: int = change['rcid']
             if cutoff_id == -1:
-                logger.info(f"Cutoff not found. Using {rc_id} as the cutoff.")
+                self.logger.info(f"Cutoff not found. Using {rc_id} as the cutoff.")
                 cutoff_id = rc_id
             if rc_id <= cutoff_id:
                 # every id that is not seen is taken care of
@@ -136,7 +128,7 @@ class RecentChangesFetcher:
             all_changes.append(change)
         result = ""
         if len(all_changes) > 0:
-            logger.info(f"{len(all_changes)} new changes detected.")
+            self.logger.info(f"{len(all_changes)} new changes detected.")
             result = self.generate_string(all_changes)
             cutoff_id = all_changes[0]['rcid']
         return cutoff_id, result

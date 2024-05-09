@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from requests.exceptions import SSLError, ConnectTimeout
+from requests.exceptions import Timeout
 import traceback
 from discord.ext import tasks
 from fetch_recent_changes import RecentChangesFetcher
@@ -7,43 +7,57 @@ from fetch_recent_changes import RecentChangesFetcher
 import discord
 import logging
 
-
-channel_id = 1233942761485635646
+@dataclass
+class ServerConfig:
+    name: str
+    api_root: str
+    article_root: str
+    channel_id: int
+    rc_id: int = -1
+    fetcher: RecentChangesFetcher = None
+    
+    
+server_configs = [
+    ServerConfig("blue-archive", 
+                 "https://bluearchive.wiki/w/api.php", 
+                 "https://bluearchive.wiki/wiki/", 
+                 1233942761485635646)
+]
 
 class MyClient(discord.Client):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fetcher = RecentChangesFetcher(name="blue-archive", 
-                                            api_root="https://bluearchive.wiki/w/api.php", 
-                                            article_root="https://bluearchive.wiki/wiki/")
-        self.rc_id = self.fetcher.load_last_change()
+        self.logger = logging.getLogger("discord.rc")
+        self.logger.setLevel(logging.INFO)
+        for config in server_configs:
+            config.fetcher = RecentChangesFetcher(config.name, config.api_root, config.article_root, self.logger)
+            self.rc_id = config.fetcher.load_last_change()
 
     async def setup_hook(self) -> None:
         # start the task to run in the background
         self.poll_recent_changes.start()
 
     async def on_ready(self):
-        self.fetcher.setup()
-        self.logger = logging.getLogger("discord")
         self.logger.info(f'Logged in as {self.user} (ID: {self.user.id})')
-        
 
     @tasks.loop(seconds=60)  # task runs every 60 seconds
     async def poll_recent_changes(self):
-        try:
-            new_rc_id, message = self.fetcher.get_recent_changes(self.rc_id)
-        except (SSLError, ConnectTimeout) as e:
-            logging.error(f"Network error: {str(e)}. Perhaps the server is down?")
-            return
-        except Exception as e:
-            logging.error(traceback.format_exc())
-            return
-        if message.strip() != "":
-            channel = self.get_channel(channel_id)  # channel ID goes here
-            await channel.send(message)
-        if new_rc_id != self.rc_id:
-            self.fetcher.save_last_change(new_rc_id)
-            self.rc_id = new_rc_id
+        for config in server_configs:
+            try:
+                new_rc_id, message = config.fetcher.get_recent_changes(self.rc_id)
+            except (ConnectionError, Timeout) as e:
+                logging.error(f"Network error: {str(e)}. Perhaps the server for {config.name} is down?")
+                continue
+            except Exception as e:
+                logging.error(f"{str(e)} on {config.name}")
+                logging.error(traceback.format_exc())
+                continue
+            if message.strip() != "":
+                channel = self.get_channel(config.channel_id)  # channel ID goes here
+                await channel.send(message)
+            if new_rc_id != self.rc_id:
+                config.fetcher.save_last_change(new_rc_id)
+                config.rc_id = new_rc_id
 
     @poll_recent_changes.before_loop
     async def before_my_task(self):
