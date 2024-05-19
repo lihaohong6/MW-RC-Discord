@@ -31,7 +31,7 @@ class MyClient(discord.Client):
         self.logger.setLevel(logging.INFO)
         for config in server_configs:
             config.fetcher = RecentChangesFetcher(config.name, config.api_root, config.article_root, self.logger)
-            self.rc_id = config.fetcher.load_last_change()
+            config.rc_id = config.fetcher.load_last_change()
 
     async def setup_hook(self) -> None:
         # start the task to run in the background
@@ -44,7 +44,7 @@ class MyClient(discord.Client):
     async def poll_recent_changes(self):
         for config in server_configs:
             try:
-                new_rc_id, message = config.fetcher.get_recent_changes(self.rc_id)
+                new_rc_id, message = config.fetcher.get_recent_changes(config.rc_id)
             except (ConnectionError, Timeout) as e:
                 logging.error(f"Network error: {str(e)}. Perhaps the server for {config.name} is down?")
                 continue
@@ -55,7 +55,7 @@ class MyClient(discord.Client):
             if message.strip() != "":
                 channel = self.get_channel(config.channel_id)  # channel ID goes here
                 await channel.send(message)
-            if new_rc_id != self.rc_id:
+            if new_rc_id != config.rc_id:
                 config.fetcher.save_last_change(new_rc_id)
                 config.rc_id = new_rc_id
 
