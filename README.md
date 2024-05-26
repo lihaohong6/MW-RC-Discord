@@ -1,6 +1,6 @@
 # Introduction
 
-Similar to MediaWiki extensions that send a discord message whenever a change occurs (such as [this extension](https://github.com/jayktaylor/mw-discord)), this python script polls the recent changes made to a MediaWiki site and then automatically sends a message to a discord channel when new changes are detected. 
+Similar to MediaWiki extensions that send a discord message whenever a change occurs (such as [this extension](https://github.com/jayktaylor/mw-discord)), this python script polls the recent changes made to a MediaWiki site and then automatically sends a message to a discord channel when new changes are detected. It has the advantage of not needing an additional extensio install, which is handy for wiki farms where admins don't have control over extensions.
 
 By default, messages are only sent for users without the `autopatrolled` right. This serves as an "alert" so that admins can check for vandalism.
 
