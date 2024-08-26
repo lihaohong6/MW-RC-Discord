@@ -81,7 +81,7 @@ class RecentChangesFetcher:
         comment = change['comment']
         if comment.strip() == "":
             comment = "NONE"
-        user_link = f'[User:{user}](<{self.article_root}Special:Contributions/{user}>)'
+        user_link = f'[User:{user}](<{self.article_root}Special:Contributions/{user.replace(" ", "_")}>)'
         article_link = f'[{title}](<{self.article_root + title.replace(" ", "_")}>)'
         if change['type'] == 'edit':
             diff_link = f"[See diff](<{self.article_root}?diff={change['revid']}&oldid={change['old_revid']}>)"
