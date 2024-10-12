@@ -9,11 +9,7 @@ class RecentChangesFetcher:
     user_groups: dict[str, list[str]] = {}
     user_rights: dict[str, list[str]] = {}
 
-<<<<<<< HEAD
     def __init__(self, name: str, api_root: str, article_root: str, logger: logging.Logger, right: str = 'autopatrol') -> None:
-=======
-    def __init__(self, name: str, api_root: str, article_root: str, logger: logging.Logger) -> None:
->>>>>>> 4fcab8562dac6f4bb832495bd7f40fd1ae603f1d
         self.name = name
         self.api_root = api_root
         self.article_root = article_root
@@ -63,11 +59,7 @@ class RecentChangesFetcher:
             return False
         # check for autopatrol right
         rights = self.get_user_rights([username])[0]
-<<<<<<< HEAD
         return self.right not in rights
-=======
-        return "autopatrol" not in rights
->>>>>>> 4fcab8562dac6f4bb832495bd7f40fd1ae603f1d
 
     def load_last_change(self) -> int:
         default: int = -1
