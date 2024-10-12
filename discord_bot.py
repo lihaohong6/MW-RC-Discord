@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import requests
 from requests.exceptions import Timeout
 import traceback
 from discord.ext import tasks
@@ -52,6 +53,8 @@ class MyClient(discord.Client):
             except (ConnectionError, Timeout) as e:
                 logging.error(f"Network error: {str(e)}. Perhaps the server for {config.name} is down?")
                 continue
+            except requests.JSONDecodeError as e:
+                logging.error(f"Cannot decode JSON: {str(e)}")
             except Exception as e:
                 logging.error(f"{str(e)} on {config.name}")
                 logging.error(traceback.format_exc())
