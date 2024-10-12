@@ -21,7 +21,11 @@ server_configs = [
     ServerConfig("blue-archive", 
                  "https://bluearchive.wiki/w/api.php", 
                  "https://bluearchive.wiki/wiki/", 
-                 1233942761485635646)
+                 1233942761485635646),
+    ServerConfig("strinova",
+                 "https://strinova.org/w/api.php",
+                 "https://strinova.rg/wiki/",
+                 1294157798422220873)
 ]
 
 class MyClient(discord.Client):

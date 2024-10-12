@@ -2,16 +2,20 @@ import requests
 from pathlib import Path
 import logging
 
+
+headers = {'User-Agent': 'MediaWiki recentchanges bot by User:PetraMagna', }
+
 class RecentChangesFetcher:
     user_groups: dict[str, list[str]] = {}
     user_rights: dict[str, list[str]] = {}
-    
-    def __init__(self, name: str, api_root: str, article_root: str, logger: logging.Logger) -> None:
+
+    def __init__(self, name: str, api_root: str, article_root: str, logger: logging.Logger, right: str = 'autopatrol') -> None:
         self.name = name
         self.api_root = api_root
         self.article_root = article_root
         self.last_rc_file = Path(f"{name}-rcid.txt")
         self.logger = logger
+        self.right = right
 
     def get_user_rights(self, usernames: list[str]) -> list[list[str]]:
         user_rights = self.user_rights
@@ -20,7 +24,7 @@ class RecentChangesFetcher:
         for username in usernames:
             if username not in user_rights:
                 query_names.append(username)
-        assert len(usernames) <= 50,\
+        assert len(usernames) <= 50, \
             f"More than 50 users ({usernames}) need to be checked." \
             "This wiki has some serious problems other than non-autopatrolled users editing pages."
         if len(query_names) > 0:
@@ -31,7 +35,7 @@ class RecentChangesFetcher:
                 'ususers': '|'.join(query_names),
                 'usprop': 'groups|rights',
                 'format': 'json'
-            })
+            }, headers=headers)
             result = result.json()['query']['users']
             for entry in result:
                 groups = entry['groups']
@@ -44,7 +48,6 @@ class RecentChangesFetcher:
             result.append(user_rights[username])
         return result
 
-
     def rc_filter(self, change) -> bool:
         username = change['user']
         user_id = change['userid']
@@ -56,8 +59,7 @@ class RecentChangesFetcher:
             return False
         # check for autopatrol right
         rights = self.get_user_rights([username])[0]
-        return "autopatrol" not in rights
-
+        return self.right not in rights
 
     def load_last_change(self) -> int:
         default: int = -1
@@ -69,11 +71,10 @@ class RecentChangesFetcher:
             except Exception as e:
                 self.logger.warn(str(e))
                 return default
-            
+
     def save_last_change(self, id: int):
         with open(self.last_rc_file, "w") as f:
             f.write(str(id))
-
 
     def change_to_str(self, change) -> str:
         user = change['user']
@@ -89,7 +90,6 @@ class RecentChangesFetcher:
         else:
             return user_link + " made a change to " + article_link
 
-
     def generate_string(self, changes) -> str:
         users = set(c['user'] for c in changes if c['userid'] != 0)
         users = list(users)
@@ -102,7 +102,6 @@ class RecentChangesFetcher:
         result = "\n".join(strings)
         return result
 
-
     def get_recent_changes(self, cutoff_id: int) -> tuple[int, str]:
         self.logger.debug("Recent changes request sent")
         rc = requests.get(self.api_root, {
@@ -113,10 +112,14 @@ class RecentChangesFetcher:
             'rcprop': 'user|userid|comment|timestamp|title|ids',
             'rclimit': 100,
             'format': 'json'
-        }).json()
-        
+        }, headers=headers)
+
+        try:
+            rc = rc.json()
+        except requests.JSONDecodeError:
+            self.logger.error(f"JSONDecodeError for {self.name} when fetching recentchanges. Maybe the site is down?")
         all_changes = []
-        
+
         for change in rc['query']['recentchanges']:
             rc_id: int = change['rcid']
             if cutoff_id == -1:
@@ -132,4 +135,3 @@ class RecentChangesFetcher:
             result = self.generate_string(all_changes)
             cutoff_id = all_changes[0]['rcid']
         return cutoff_id, result
-
