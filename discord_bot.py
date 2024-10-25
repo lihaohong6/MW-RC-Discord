@@ -25,7 +25,7 @@ server_configs = [
                  1233942761485635646),
     ServerConfig("strinova",
                  "https://strinova.org/w/api.php",
-                 "https://strinova.rg/wiki/",
+                 "https://strinova.org/wiki/",
                  1294157798422220873)
 ]
 
