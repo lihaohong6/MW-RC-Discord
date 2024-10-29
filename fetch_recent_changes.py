@@ -43,6 +43,7 @@ class RecentChangesFetcher:
                 name = entry['name']
                 user_groups[name] = groups
                 user_rights[name] = rights
+                self.logger.debug(f"User {name} is in groups {', '.join(groups)} and has rights {', '.join(rights)}")
         result = []
         for username in usernames:
             result.append(user_rights[username])
@@ -69,7 +70,7 @@ class RecentChangesFetcher:
             try:
                 return int(f.read())
             except Exception as e:
-                self.logger.warn(str(e))
+                self.logger.warning(str(e))
                 return default
 
     def save_last_change(self, id: int):
@@ -103,7 +104,7 @@ class RecentChangesFetcher:
         return result
 
     def get_recent_changes(self, cutoff_id: int) -> tuple[int, str]:
-        self.logger.debug("Recent changes request sent")
+        self.logger.debug(f"Recent changes request sent to {self.name}")
         rc = requests.get(self.api_root, {
             # TODO: maybe add timestamp here? not really necessary since 100 edits/min or even 100 edit/hour is a lot
             'action': 'query',
