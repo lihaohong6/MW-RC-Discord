@@ -132,7 +132,7 @@ class RecentChangesFetcher:
             all_changes.append(change)
         result = ""
         if len(all_changes) > 0:
-            self.logger.info(f"{len(all_changes)} new changes detected.")
+            self.logger.info(f"{self.name}: {len(all_changes)} new changes detected.")
             result = self.generate_string(all_changes)
             cutoff_id = all_changes[0]['rcid']
         return cutoff_id, result

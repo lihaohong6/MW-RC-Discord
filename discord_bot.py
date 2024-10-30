@@ -50,11 +50,12 @@ class MyClient(discord.Client):
         for config in server_configs:
             try:
                 new_rc_id, message = config.fetcher.get_recent_changes(config.rc_id)
-            except (ConnectionError, Timeout) as e:
+            except (ConnectionError, Timeout, TimeoutError) as e:
                 logging.error(f"Network error: {str(e)}. Perhaps the server for {config.name} is down?")
                 continue
             except requests.JSONDecodeError as e:
                 logging.error(f"Cannot decode JSON: {str(e)}")
+                continue
             except Exception as e:
                 logging.error(f"{str(e)} on {config.name}")
                 logging.error(traceback.format_exc())
