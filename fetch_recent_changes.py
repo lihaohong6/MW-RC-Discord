@@ -115,10 +115,7 @@ class RecentChangesFetcher:
             'format': 'json'
         }, headers=headers)
 
-        try:
-            rc = rc.json()
-        except requests.JSONDecodeError:
-            raise requests.JSONDecodeError(rc.text)
+        rc = rc.json()
         all_changes = []
 
         for change in rc['query']['recentchanges']:
