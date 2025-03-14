@@ -61,6 +61,10 @@ class MyClient(discord.Client):
                 self.logger.error(traceback.format_exc())
                 continue
             if message.strip() != "":
+                if len(message) >= 1500:
+                    print(f"Message too long. Will be truncated. Original: {message}")
+                    message = message[:1500] + "\n\nMessage truncated"
+
                 channel = self.get_channel(config.channel_id)  # channel ID goes here
                 await channel.send(message)
             if new_rc_id != config.rc_id:
